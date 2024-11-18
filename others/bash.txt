@@ -1,0 +1,245 @@
+#!/bin/bash
+
+#!/bin/bash
+
+function myadd1 {
+    local n1=$1
+    local n2=$2
+    let sum=$n1+$n2
+    echo "Addition result: $sum"
+}
+
+function mysub {
+    local n1=$1
+    local n2=$2
+    let diff=$n1-$n2
+    echo "Subtraction result: $diff"
+}
+
+function mymul {
+    local n1=$1
+    local n2=$2
+    let prod=$n1*$n2
+    echo "Multiplication result: $prod"
+}
+
+function mydiv {
+    local n1=$1
+    local n2=$2
+    if [ $n2 -eq 0 ]; then
+        echo "Error: Division by zero is not allowed!"
+    else
+        let result=$n1/$n2
+        echo "Division result: $result"
+    fi
+}
+
+read -p "Enter first number: " num1
+read -p "Enter second number: " num2
+
+echo "Choose an operation:"
+echo "1) Add"
+echo "2) Subtract"
+echo "3) Multiply"
+echo "4) Divide"
+read -p "Enter your choice (1/2/3/4): " choice
+
+case $choice in
+    1)
+        myadd1 $num1 $num2
+        ;;
+    2)
+        mysub $num1 $num2
+        ;;
+    3)
+        mymul $num1 $num2
+        ;;
+    4)
+        mydiv $num1 $num2
+        ;;
+    *)
+        echo "Invalid choice. Please select a valid option."
+        ;;
+esac
+
+
+<< Multiline comment example
+....
+
+
+# Variable ============================================
+var_name=$(hostname)
+echo $var_name
+
+var_name1="divyanshu"
+echo $var_name1
+
+# Variable assignment
+var_num='1'
+echo $var_num
+
+# Read-only variable ============================================
+readonly var_name2="i m constant"
+echo $var_name2
+
+# Input without prompt ============================================
+read var_ip  # User input without prompt
+echo $var_ip
+
+# Input with prompt ============================================
+read -p "What is your name? " var_ip1
+echo "$var_ip1 is it correct?"
+
+# if elif else ============================================
+read -p "enter age : " age
+if [ $age -eq 18 ]; then 
+    echo "you are 18 years old"
+elif [ $age -eq 19 ]; then
+    echo "you are 19 years old"
+else 
+    echo "not 18 and not 19"
+fi
+# operators: -eq -le -ge -ne -gt -lt
+
+# check file or directory ============================================
+if [ -d "folderName" ]; then
+    echo "folderName found"
+else 
+    echo "not found"
+fi
+# if [ -d "folderName" ]; then
+# if [ ! -d "folderName" ]; then
+# if [ -f "fileName" ]; then
+# if [ ! -f "fileName" ]; then
+
+# SWITCH CASE ============================================
+read -p "enter 1 or a" choice 
+case $choice in
+    1) echo "entered 1" ;;
+    a) echo "entered a" ;; 
+    *) echo "default case" ;;
+esac
+
+# FOR  ============================================
+for i in 1 2 3 4 5
+do 
+    echo "num is $i" 
+done
+for i in raju ram mohan
+do 
+    echo "name is $i" 
+done
+for i in {1..5}
+do 
+    echo "num is $i" # not working 
+done
+
+# READ TEXT FILE ============================================
+file="s.txt"
+
+# Reading file line by line (FOR)
+if [ -f "$file" ]; then
+    for item in $(cat "$file"); do
+        echo "$item"
+    done
+else
+    echo "$file not found"
+fi
+
+# Reading file line by line (WHILE)
+if [ -f "$file" ]; then
+    while IFS= read -r line; do
+        echo "$line"
+    done < "$file"
+else
+    echo "$file not found"
+fi
+
+# Display entire file content
+if [ -f "$file" ]; then
+    cat "$file"
+else
+    echo "$file not found"
+fi
+
+# WHILE LOOP ============================================
+
+count=0
+num=10
+while [ $count -le $num ]
+do 
+    echo "num are $count"
+    count=$((count+1))
+done
+
+# UNTIL LOOP  ============================================
+a=10
+until [ $a -eq 1 ]
+do 
+    echo $a
+    a=`expr $a - 1`
+    # a=$((a - 1))  # Preferred method to decrement a
+done
+
+# INFINITE LOOP ============================================
+while true
+do
+    echo "Hi"
+    sleep 1s
+done
+
+# BREAK & CONTINUE ============================================
+# Using continue in a for loop
+for i in 1 2 3
+do 
+    echo $i
+    continue      # Skips the remaining code and continues with the next iteration
+    echo "remaining"  # This line is never executed due to continue
+done
+
+# Using break in a while loop
+while true
+do  
+    echo "breaking"
+    break   # Exits the loop immediately after the first iteration
+done
+
+# expression ============================================
+a=4
+((a++))  # Incrementing a using $((...))
+echo $a
+
+((a = 5 * 10))  # Assigning the result of 5 * 10 to a
+echo $a
+
+# print name of script ============================================
+echo "Script name is : ${0}"
+
+# function ============================================
+function myfun1 {
+    echo "myfun1 called"
+}
+myfun2() {
+    echo "myfun2 called"
+}
+
+myfun1
+myfun2
+
+# function with parameter ============================================
+function myadd1 {
+    local n1=$1 # 1st parameter 
+    local n2=$2 # 2nd parameter 
+    let sum=$n1+$n2
+    echo "myadd1 called $sum"
+}
+myadd2() {
+    local n1=$1
+    local n2=$2
+    let sum=$n1+$n2
+    echo "myadd2 called $sum"
+}
+
+myadd1 2 3
+myadd2 2 3
+Multiline
