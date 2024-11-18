@@ -1,0 +1,137 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gcc p.c -o c -pthread
+using semaphore
+
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define N 5
+#define THINKING 2
+#define HUNGRY 1
+#define EATING 0
+#define LEFT (philosopher + 4) % N
+#define RIGHT (philosopher + 1) % N
+
+int state[N];
+int philosophers[N] = {0, 1, 2, 3, 4};
+
+sem_t mutex;         // Semaphore for critical section
+sem_t forks[N];      // Semaphore for each philosopher's fork
+
+void test(int philosopher) {
+    if (state[philosopher] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
+        state[philosopher] = EATING;
+        printf("Philosopher %d takes fork %d and %d\n", philosopher + 1, LEFT + 1, philosopher + 1);
+        printf("Philosopher %d is Eating\n", philosopher + 1);
+
+        sem_post(&forks[philosopher]); // Signal that the philosopher can eat
+    }
+}
+
+void take_forks(int philosopher) {
+    sem_wait(&mutex); // Enter critical section
+    state[philosopher] = HUNGRY;
+    printf("Philosopher %d is Hungry\n", philosopher + 1);
+
+    test(philosopher); // Check if philosopher can eat
+    sem_post(&mutex);  // Exit critical section
+    sem_wait(&forks[philosopher]); // Wait until allowed to eat
+    sleep(1); // Simulate eating time
+}
+
+void put_forks(int philosopher) {
+    sem_wait(&mutex); // Enter critical section
+    state[philosopher] = THINKING;
+    printf("Philosopher %d puts down fork %d and %d\n", philosopher + 1, LEFT + 1, philosopher + 1);
+    printf("Philosopher %d is Thinking\n", philosopher + 1);
+
+    test(LEFT);  // Check if left neighbor can eat
+    test(RIGHT); // Check if right neighbor can eat
+    sem_post(&mutex); // Exit critical section
+}
+
+void* philosopher(void* num) {
+    int philosopher = *(int*)num;
+
+    while (1) {
+        printf("Philosopher %d is Thinking\n", philosopher + 1);
+        sleep(1); // Simulate thinking time
+
+        take_forks(philosopher);
+        put_forks(philosopher);
+    }
+}
+
+int main() {
+    pthread_t threads[N];
+    sem_init(&mutex, 0, 1);
+
+    for (int i = 0; i < N; i++) {
+        sem_init(&forks[i], 0, 0);
+    }
+
+    for (int i = 0; i < N; i++) {
+        pthread_create(&threads[i], NULL, philosopher, &philosophers[i]);
+    }
+
+    for (int i = 0; i < N; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    return 0;
+}

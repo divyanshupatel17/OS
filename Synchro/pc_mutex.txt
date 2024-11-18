@@ -1,0 +1,146 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define BUFFER_SIZE 5
+#define MAX_ITEMS 20
+
+int buffer[BUFFER_SIZE];
+int in = 0;
+int out = 0;
+int produced_count = 0;
+int consumed_count = 0;
+
+pthread_mutex_t mutex;
+pthread_cond_t notFull;
+pthread_cond_t notEmpty;
+
+void* producer(void* arg) {
+    int item = 1;
+
+    while (produced_count < MAX_ITEMS) {
+        // Lock the mutex to ensure mutual exclusion
+        pthread_mutex_lock(&mutex);
+
+        // Wait if the buffer is full (in + 1 % BUFFER_SIZE == out means buffer is full)
+        while ((in + 1) % BUFFER_SIZE == out) {
+            pthread_cond_wait(&notFull, &mutex);
+        }
+
+        // Produce the item and add it to the buffer
+        buffer[in] = item;
+        printf("Produced: %d\n", item);
+        item++;
+        in = (in + 1) % BUFFER_SIZE;
+
+        produced_count++;
+
+        // Signal the consumer that there is a new item
+        pthread_cond_signal(&notEmpty);
+
+        // Unlock the mutex
+        pthread_mutex_unlock(&mutex);
+    }
+
+    pthread_exit(NULL);
+}
+
+void* consumer(void* arg) {
+    while (consumed_count < MAX_ITEMS) {
+        // Lock the mutex to ensure mutual exclusion
+        pthread_mutex_lock(&mutex);
+
+        // Wait if the buffer is empty (in == out means buffer is empty)
+        while (in == out) {
+            pthread_cond_wait(&notEmpty, &mutex);
+        }
+
+        // Consume the item from the buffer
+        int item = buffer[out];
+        printf("Consumed: %d\n", item);
+        out = (out + 1) % BUFFER_SIZE;
+
+        consumed_count++;
+
+        // Signal the producer that there is space available in the buffer
+        pthread_cond_signal(&notFull);
+
+        // Unlock the mutex
+        pthread_mutex_unlock(&mutex);
+    }
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t producerThread, consumerThread;
+
+    // Initialize the mutex and condition variables
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&notFull, NULL);
+    pthread_cond_init(&notEmpty, NULL);
+
+    // Create producer and consumer threads
+    pthread_create(&producerThread, NULL, producer, NULL);
+    pthread_create(&consumerThread, NULL, consumer, NULL);
+
+    // Wait for the threads to finish
+    pthread_join(producerThread, NULL);
+    pthread_join(consumerThread, NULL);
+
+    // Destroy the mutex and condition variables
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&notFull);
+    pthread_cond_destroy(&notEmpty);
+
+    return 0;
+}

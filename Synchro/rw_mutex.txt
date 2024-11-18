@@ -1,0 +1,148 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define READERS 3
+#define WRITERS 2
+
+// Shared variables
+pthread_mutex_t readMutex;     // Protects readCount
+pthread_mutex_t writeMutex;    // Controls write access
+int readCount = 0;
+
+void* reader(void* arg) {
+    int reader_id = *(int*)arg;
+    
+    while(1) {
+        // Entry section
+        pthread_mutex_lock(&readMutex);
+        readCount++;
+        if (readCount == 1) {
+            pthread_mutex_lock(&writeMutex);  // First reader blocks writers
+        }
+        pthread_mutex_unlock(&readMutex);
+        
+        // Reading section
+        printf("Reader %d is READING\n", reader_id + 1);
+        sleep(1);  // Simulate reading time
+        printf("Reader %d has FINISHED READING\n", reader_id + 1);
+        
+        // Exit section
+        pthread_mutex_lock(&readMutex);
+        readCount--;
+        if (readCount == 0) {
+            pthread_mutex_unlock(&writeMutex);  // Last reader allows writers
+        }
+        pthread_mutex_unlock(&readMutex);
+        
+        sleep(2);  // Wait before next read
+    }
+    return NULL;
+}
+
+void* writer(void* arg) {
+    int writer_id = *(int*)arg;
+    
+    while(1) {
+        pthread_mutex_lock(&writeMutex);  // Request exclusive access
+        
+        // Writing section
+        printf("Writer %d is WRITING\n", writer_id + 1);
+        sleep(2);  // Simulate writing time
+        printf("Writer %d has finished WRITING\n", writer_id + 1);
+        
+        pthread_mutex_unlock(&writeMutex);  // Release exclusive access
+        
+        sleep(3);  // Wait before next write
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t readers[READERS], writers[WRITERS];
+    int readerIds[READERS], writerIds[WRITERS];
+    
+    // Initialize mutexes
+    pthread_mutex_init(&readMutex, NULL);
+    pthread_mutex_init(&writeMutex, NULL);
+    
+    // Create reader threads
+    for (int i = 0; i < READERS; i++) {
+        readerIds[i] = i;
+        pthread_create(&readers[i], NULL, reader, &readerIds[i]);
+        usleep(100);  // Small delay between thread creation
+    }
+    
+    // Create writer threads
+    for (int i = 0; i < WRITERS; i++) {
+        writerIds[i] = i;
+        pthread_create(&writers[i], NULL, writer, &writerIds[i]);
+        usleep(100);  // Small delay between thread creation
+    }
+    
+    // Wait for threads to finish (they run indefinitely in this case)
+    for (int i = 0; i < READERS; i++) {
+        pthread_join(readers[i], NULL);
+    }
+    for (int i = 0; i < WRITERS; i++) {
+        pthread_join(writers[i], NULL);
+    }
+    
+    // Clean up mutexes
+    pthread_mutex_destroy(&readMutex);
+    pthread_mutex_destroy(&writeMutex);
+    
+    return 0;
+}

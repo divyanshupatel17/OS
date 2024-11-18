@@ -1,0 +1,137 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gcc p.c -o c -pthread
+using mutex
+
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define N 5
+#define THINKING 2
+#define HUNGRY 1
+#define EATING 0
+#define LEFT (philosopher + 4) % N
+#define RIGHT (philosopher + 1) % N
+
+int state[N];
+int philosophers[N] = {0, 1, 2, 3, 4};
+
+pthread_mutex_t mutex;  // Mutex for critical section
+pthread_mutex_t forks[N]; // Mutex for each fork
+
+void test(int philosopher) {
+    if (state[philosopher] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
+        state[philosopher] = EATING;
+        printf("Philosopher %d takes fork %d and %d\n", philosopher + 1, LEFT + 1, philosopher + 1);
+        printf("Philosopher %d is Eating\n", philosopher + 1);
+    }
+}
+
+void take_forks(int philosopher) {
+    pthread_mutex_lock(&mutex); // Enter critical section
+    state[philosopher] = HUNGRY;
+    printf("Philosopher %d is Hungry\n", philosopher + 1);
+
+    test(philosopher); // Check if philosopher can eat
+    pthread_mutex_unlock(&mutex); // Exit critical section
+
+    pthread_mutex_lock(&forks[LEFT]);  // Lock left fork
+    pthread_mutex_lock(&forks[RIGHT]); // Lock right fork
+    sleep(1); // Simulate eating time
+}
+
+void put_forks(int philosopher) {
+    pthread_mutex_unlock(&forks[LEFT]);  // Release left fork
+    pthread_mutex_unlock(&forks[RIGHT]); // Release right fork
+
+    pthread_mutex_lock(&mutex); // Enter critical section
+    state[philosopher] = THINKING;
+    printf("Philosopher %d puts down fork %d and %d\n", philosopher + 1, LEFT + 1, philosopher + 1);
+    printf("Philosopher %d is Thinking\n", philosopher + 1);
+    pthread_mutex_unlock(&mutex); // Exit critical section
+}
+
+void* philosopher(void* num) {
+    int philosopher = *(int*)num;
+
+    while (1) {
+        printf("Philosopher %d is Thinking\n", philosopher + 1);
+        sleep(1); // Simulate thinking time
+
+        take_forks(philosopher);
+        put_forks(philosopher);
+    }
+}
+
+int main() {
+    pthread_t threads[N];
+    pthread_mutex_init(&mutex, NULL);
+
+    for (int i = 0; i < N; i++) {
+        pthread_mutex_init(&forks[i], NULL);
+    }
+
+    for (int i = 0; i < N; i++) {
+        pthread_create(&threads[i], NULL, philosopher, &philosophers[i]);
+    }
+
+    for (int i = 0; i < N; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    pthread_mutex_destroy(&mutex);
+    for (int i = 0; i < N; i++) {
+        pthread_mutex_destroy(&forks[i]);
+    }
+
+    return 0;
+}

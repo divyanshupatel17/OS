@@ -1,0 +1,154 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define READERS 3  // Number of reader threads
+#define WRITERS 2  // Number of writer threads
+
+// Shared variables
+sem_t readLock;
+sem_t writeLock;
+int readCount = 0;
+
+void* reader(void* arg) {
+    int reader_id = *(int*)arg;
+    
+    while(1) {  // Continuous reading
+        sem_wait(&readLock);
+        readCount++;
+        if (readCount == 1) {
+            sem_wait(&writeLock);  // First reader acquires writeLock
+        }
+        sem_post(&readLock);
+        
+        // Reading section
+        printf("Reader %d is READING\n", reader_id + 1);
+        sleep(1);  // Simulate reading time
+        printf("Reader %d has FINISHED READING\n", reader_id + 1);
+        
+        // Releasing section
+        sem_wait(&readLock);
+        readCount--;
+        if (readCount == 0) {
+            sem_post(&writeLock);  // Last reader releases writeLock
+        }
+        sem_post(&readLock);
+        
+        sleep(2);  // Wait before next read
+    }
+    return NULL;
+}
+
+void* writer(void* arg) {
+    int writer_id = *(int*)arg;
+    
+    while(1) {  // Continuous writing
+        sem_wait(&writeLock);  // Writer needs exclusive access
+        
+        printf("Writer %d is WRITING\n", writer_id + 1);
+        sleep(2);  // Simulate writing time
+        printf("Writer %d has finished WRITING\n", writer_id + 1);
+        
+        sem_post(&writeLock);
+        
+        sleep(3);  // Wait before next write
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t readers[READERS], writers[WRITERS];
+    int readerIds[READERS], writerIds[WRITERS];
+    
+    // Initialize semaphores
+    sem_init(&readLock, 0, 1);
+    sem_init(&writeLock, 0, 1);
+    
+    // Create reader threads
+    for (int i = 0; i < READERS; i++) {
+        readerIds[i] = i;
+        pthread_create(&readers[i], NULL, reader, &readerIds[i]);
+        usleep(100);  // Small delay between thread creation
+    }
+    
+    // Create writer threads
+    for (int i = 0; i < WRITERS; i++) {
+        writerIds[i] = i;
+        pthread_create(&writers[i], NULL, writer, &writerIds[i]);
+        usleep(100);  // Small delay between thread creation
+    }
+    
+    // Wait for threads to finish (they run indefinitely in this case)
+    for (int i = 0; i < READERS; i++) {
+        pthread_join(readers[i], NULL);
+    }
+    for (int i = 0; i < WRITERS; i++) {
+        pthread_join(writers[i], NULL);
+    }
+    
+    // Clean up semaphores (not reached in this case)
+    sem_destroy(&readLock);
+    sem_destroy(&writeLock);
+    
+    return 0;
+}

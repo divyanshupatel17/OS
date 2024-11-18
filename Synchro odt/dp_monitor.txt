@@ -1,0 +1,114 @@
+class DiningPhilosophers {
+    private final int N = 5; // Number of philosophers
+    private final int[] state = new int[N]; // State: 0 = THINKING, 1 = HUNGRY, 2 = EATING
+    private final Object[] forks = new Object[N]; // Forks are represented as objects
+
+    // Initialize forks
+    public DiningPhilosophers() {
+        for (int i = 0; i < N; i++) {
+            forks[i] = new Object(); // Each fork is an object
+        }
+    }
+
+    // Helper methods to get left and right neighbors
+    private int left(int i) {
+        return (i + N - 1) % N;
+    }
+
+    private int right(int i) {
+        return (i + 1) % N;
+    }
+
+    // Method to test if a philosopher can eat
+    private synchronized void test(int philosopher) {
+        if (state[philosopher] == 1 && state[left(philosopher)] != 2 && state[right(philosopher)] != 2) {
+            state[philosopher] = 2; // Set state to EATING
+            System.out.println("Philosopher " + (philosopher + 1) + " takes fork " + (left(philosopher) + 1) 
+                               + " and fork " + (philosopher + 1) + " and starts Eating");
+            notifyAll(); // Notify other waiting threads
+        }
+    }
+
+    // Method for a philosopher to take forks
+    public synchronized void takeForks(int philosopher) {
+        state[philosopher] = 1; // Set state to HUNGRY
+        System.out.println("Philosopher " + (philosopher + 1) + " is Hungry");
+
+        // Try to acquire left and right forks
+        synchronized (forks[left(philosopher)]) {
+            synchronized (forks[philosopher]) {
+                test(philosopher); // Check if the philosopher can eat
+            }
+        }
+
+        // Wait if not eating
+        while (state[philosopher] != 2) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    // Method for a philosopher to put down forks
+    public synchronized void putForks(int philosopher) {
+        if (state[philosopher] != 2) { // Ensure the philosopher is eating
+            return;
+        }
+
+        state[philosopher] = 0; // Set state to THINKING
+        System.out.println("Philosopher " + (philosopher + 1) + " puts down forks and starts Thinking");
+
+        // Check if neighbors can eat
+        test(left(philosopher));
+        test(right(philosopher));
+    }
+}
+
+class Philosopher implements Runnable {
+    private final int id;
+    private final DiningPhilosophers dp;
+
+    public Philosopher(int id, DiningPhilosophers dp) {
+        this.id = id;
+        this.dp = dp;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                System.out.println("Philosopher " + (id + 1) + " is Thinking");
+                Thread.sleep(1000); // Simulate thinking
+                dp.takeForks(id);
+                Thread.sleep(1000); // Simulate eating
+                dp.putForks(id);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+public class dp_monitor {
+    public static void main(String[] args) {
+        DiningPhilosophers dp = new DiningPhilosophers();
+        Thread[] philosophers = new Thread[5];
+
+        // Create philosopher threads
+        for (int i = 0; i < 5; i++) {
+            philosophers[i] = new Thread(new Philosopher(i, dp));
+            philosophers[i].start();
+        }
+
+        // Join threads (optional for continuous simulation)
+        for (Thread philosopher : philosophers) {
+            try {
+                philosopher.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}

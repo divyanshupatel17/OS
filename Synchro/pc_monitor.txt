@@ -1,0 +1,157 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Buffer {
+    private final int BUFFER_SIZE = 5;
+    private final int[] buffer = new int[BUFFER_SIZE];
+    private int in = 0, out = 0;
+    private int producedCount = 0;
+    private int consumedCount = 0;
+
+    // Getter methods for producedCount and consumedCount
+    public int getProducedCount() {
+        return producedCount;
+    }
+
+    public int getConsumedCount() {
+        return consumedCount;
+    }
+
+    // Producer method to add items to the buffer
+    public synchronized void produce() throws InterruptedException {
+        while ((in + 1) % BUFFER_SIZE == out) {  // Buffer is full
+            wait();  // Wait for space to become available
+        }
+
+        buffer[in] = producedCount + 1;
+        System.out.println("Produced: " + buffer[in]);
+        in = (in + 1) % BUFFER_SIZE;
+        producedCount++;
+
+        notify();  // Notify consumer that an item is available
+    }
+
+    // Consumer method to remove items from the buffer
+    public synchronized void consume() throws InterruptedException {
+        while (in == out) {  // Buffer is empty
+            wait();  // Wait for an item to be produced
+        }
+
+        int item = buffer[out];
+        System.out.println("Consumed: " + item);
+        out = (out + 1) % BUFFER_SIZE;
+        consumedCount++;
+
+        notify();  // Notify producer that there is space available
+    }
+}
+
+class Producer implements Runnable {
+    private final Buffer buffer;
+
+    public Producer(Buffer buffer) {
+        this.buffer = buffer;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                buffer.produce();
+                if (buffer.getProducedCount() >= 20) break;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+class Consumer implements Runnable {
+    private final Buffer buffer;
+
+    public Consumer(Buffer buffer) {
+        this.buffer = buffer;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                buffer.consume();
+                if (buffer.getConsumedCount() >= 20) break;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+public class pc_monitor {
+    public static void main(String[] args) {
+        Buffer buffer = new Buffer();
+        
+        // Create producer and consumer threads
+        Thread producerThread = new Thread(new Producer(buffer));
+        Thread consumerThread = new Thread(new Consumer(buffer));
+
+        // Start the threads
+        producerThread.start();
+        consumerThread.start();
+
+        try {
+            // Wait for both threads to finish
+            producerThread.join();
+            consumerThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}

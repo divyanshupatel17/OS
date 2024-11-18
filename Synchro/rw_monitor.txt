@@ -1,0 +1,125 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import java.util.concurrent.Semaphore;
+
+class rw_monitor {
+    static Semaphore readLock = new Semaphore(1);
+    static Semaphore writeLock = new Semaphore(1);
+    static int readCount = 0;
+
+    static class Read implements Runnable {
+        @Override
+        public void run() {
+            try {
+                // Acquire the readLock to modify readCount
+                readLock.acquire();
+                readCount++;
+                if (readCount == 1) {
+                    writeLock.acquire(); // First reader acquires the writeLock
+                }
+                readLock.release(); // Release readLock after updating readCount
+
+                // Reading section
+                System.out.println("Thread " + Thread.currentThread().getName() + " is READING");
+                Thread.sleep(1500); // Simulate reading time
+                System.out.println("Thread " + Thread.currentThread().getName() + " has FINISHED READING");
+
+                // Releasing section
+                readLock.acquire();
+                readCount--;
+                if (readCount == 0) {
+                    writeLock.release(); // Last reader releases the writeLock
+                }
+                readLock.release();
+            } catch (InterruptedException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    static class Write implements Runnable {
+        @Override
+        public void run() {
+            try {
+                writeLock.acquire(); // Writer needs exclusive access
+                System.out.println("Thread " + Thread.currentThread().getName() + " is WRITING");
+                Thread.sleep(2500); // Simulate writing time
+                System.out.println("Thread " + Thread.currentThread().getName() + " has finished WRITING");
+                writeLock.release(); // Release writeLock after writing is done
+            } catch (InterruptedException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Read read = new Read();
+        Write write = new Write();
+        
+        // Create and start threads for reading and writing
+        Thread t1 = new Thread(read);
+        t1.setName("thread1");
+        Thread t2 = new Thread(read);
+        t2.setName("thread2");
+        Thread t3 = new Thread(write);
+        t3.setName("thread3");
+        Thread t4 = new Thread(read);
+        t4.setName("thread4");
+
+        // Start threads
+        t1.start();
+        t2.start();
+        t3.start();
+        t4.start();
+    }
+}
